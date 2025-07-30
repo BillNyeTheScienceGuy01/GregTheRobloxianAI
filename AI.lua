@@ -32,14 +32,30 @@ function NexusGui.new()
     frame.Draggable = true
 
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 30)
+    title.Size = UDim2.new(1, -30, 0, 30)
+    title.Position = UDim2.new(0, 0, 0, 0)
     title.BackgroundColor3 = Color3.fromRGB(15,15,15)
     title.BorderSizePixel = 0
     title.TextColor3 = Color3.fromRGB(255, 0, 0)
     title.Font = Enum.Font.Arcade
     title.TextSize = 24
     title.Text = "CoolGUI_X | Greg™"
+    title.TextXAlignment = Enum.TextXAlignment.Left
     title.Parent = frame
+
+    local closeButton = Instance.new("TextButton")
+    closeButton.Size = UDim2.new(0, 30, 0, 30)
+    closeButton.Position = UDim2.new(1, -30, 0, 0)
+    closeButton.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
+    closeButton.Text = "X"
+    closeButton.TextColor3 = Color3.new(1, 1, 1)
+    closeButton.Font = Enum.Font.SourceSansBold
+    closeButton.TextSize = 18
+    closeButton.Parent = frame
+
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
 
     local self = setmetatable({
         ScreenGui = screenGui,
