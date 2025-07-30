@@ -81,7 +81,7 @@ sendButton.Text = "Unleash Greg™"
 sendButton.TextSize = 18
 sendButton.Parent = frame
 
-local GREG_ENDPOINT = "https://8e4ea171f3e4.ngrok-free.app/respond"
+local GREG_ENDPOINT = "https://355d3efc8324.ngrok-free.app/respond"
 local httpRequest = getHttpRequest()
 
 sendButton.MouseButton1Click:Connect(function()
