@@ -1,10 +1,9 @@
 --[[
   Greg AI Chat Injector GUI (CoolGUI_X Edition)
-  Frameworks: NexusGui, DrawingAPI fallback, RemoteEvent spoof
+  Frameworks: NexusGui, RemoteEvent legit creation (client-side)
   Author: Isaac (a.k.a OTC Greg Summoner)
-  Version: KRNL Client Exploit Edition
-  Note: This version fakes a RemoteFunction bridge client-side for KRNL.
-]]--
+  Version: KRNL Client Exploit Edition (with RemoteEvent)
+]]
 
 -- Nexus GUI Framework
 local NexusGui = {}
@@ -103,12 +102,23 @@ function NexusGui:AddButton()
     return button
 end
 
--- Greg AI + Chat Hook (KRNL client-side HTTP)
+-- Main Greg AI + Chat Hook (KRNL client-side HTTP + RemoteEvent creation)
 local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
-local chatEvents = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
+-- Legit RemoteEvent creation client-side only
+local remoteName = "GregChatEvent"
+local GregChatEvent = ReplicatedStorage:FindFirstChild(remoteName)
+if not GregChatEvent then
+    GregChatEvent = Instance.new("RemoteEvent")
+    GregChatEvent.Name = remoteName
+    GregChatEvent.Parent = ReplicatedStorage
+end
+
+-- Roblox default chat event for chat injection
+local chatEvents = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
 local ChatEvent = chatEvents and chatEvents:FindFirstChild("SayMessageRequest")
 
 local GREG_ENDPOINT = "https://8e4ea171f3e4.ngrok-free.app/respond"
@@ -122,8 +132,17 @@ sendButton.MouseButton1Click:Connect(function()
     if msg == "" then return end
     inputBox.Text = ""
 
+    -- Fire your own RemoteEvent client-side (doesn't communicate server, but useful to avoid errors)
+    GregChatEvent:FireServer(msg)
+
+    local exploitRequest = http_request or request or (syn and syn.request) or (fluxus and fluxus.request)
+    if not exploitRequest then
+        warn("[Greg™]: No supported HTTP exploit function available.")
+        return
+    end
+
     local success, response = pcall(function()
-        return syn and syn.request and syn.request({
+        return exploitRequest({
             Url = GREG_ENDPOINT,
             Method = "POST",
             Headers = {
@@ -132,7 +151,7 @@ sendButton.MouseButton1Click:Connect(function()
             Body = HttpService:JSONEncode({
                 prompt = player.Name .. ": " .. msg
             })
-        }) or error("syn.request not available")
+        })
     end)
 
     if success and response and response.Body then
