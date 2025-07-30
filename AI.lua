@@ -1,36 +1,43 @@
--- Minimal Nexus GUI embed (clean and fixed)
+--[[
+  Greg AI Chat Injector GUI (CoolGUI_X Edition)
+  Frameworks: NexusGui, DrawingAPI fallback, RemoteEvent scanner
+  Author: Isaac (a.k.a OTC Greg Summoner)
+  Version: Phase 2 BETA
+]]--
+
+-- Nexus GUI Framework
 local NexusGui = {}
 NexusGui.__index = NexusGui
 
 function NexusGui.new()
     local guiParent = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
     if not guiParent then
-        guiParent = game:GetService("CoreGui") -- fallback if PlayerGui doesn’t exist yet
+        guiParent = game:GetService("CoreGui")
     end
 
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "NexusGUI"
+    screenGui.Name = "GregGUI_X"
     screenGui.ResetOnSpawn = false
     screenGui.IgnoreGuiInset = true
     screenGui.Parent = guiParent
 
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 300, 0, 120)
-    frame.Position = UDim2.new(0.5, -150, 0.5, -60)
-    frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    frame.Size = UDim2.new(0, 320, 0, 140)
+    frame.Position = UDim2.new(0.5, -160, 0.5, -70)
+    frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
     frame.Active = true
     frame.Draggable = true
 
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 25)
-    title.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.BackgroundColor3 = Color3.fromRGB(15,15,15)
     title.BorderSizePixel = 0
-    title.TextColor3 = Color3.fromRGB(255,255,255)
-    title.Font = Enum.Font.SourceSansBold
-    title.TextSize = 20
-    title.Text = "Greg™ Chat"
+    title.TextColor3 = Color3.fromRGB(255, 0, 0)
+    title.Font = Enum.Font.Arcade
+    title.TextSize = 24
+    title.Text = "CoolGUI_X | Greg™"
     title.Parent = frame
 
     local self = setmetatable({
@@ -47,14 +54,14 @@ function NexusGui:AddTextBox()
     local input = Instance.new("TextBox")
     input.Size = UDim2.new(1, -20, 0, 30)
     input.Position = UDim2.new(0, 10, 0, 40)
-    input.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    input.BackgroundColor3 = Color3.fromRGB(35,35,35)
     input.BorderSizePixel = 0
-    input.TextColor3 = Color3.fromRGB(255,255,255)
+    input.TextColor3 = Color3.new(1,1,1)
     input.ClearTextOnFocus = false
-    input.PlaceholderText = "Talk to Greg™"
-    input.Text = ""
-    input.Font = Enum.Font.SourceSans
+    input.PlaceholderText = "Ask Greg™ something cursed..."
+    input.Font = Enum.Font.Code
     input.TextSize = 18
+    input.Text = ""
     input.Parent = self.Frame
 
     table.insert(self.Components, input)
@@ -66,11 +73,11 @@ function NexusGui:AddButton()
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(1, -20, 0, 30)
     button.Position = UDim2.new(0, 10, 0, 80)
-    button.BackgroundColor3 = Color3.fromRGB(0,120,255)
+    button.BackgroundColor3 = Color3.fromRGB(255,0,0)
     button.BorderSizePixel = 0
-    button.TextColor3 = Color3.fromRGB(255,255,255)
-    button.Text = "Send"
-    button.Font = Enum.Font.SourceSansBold
+    button.TextColor3 = Color3.new(1,1,1)
+    button.Font = Enum.Font.SciFi
+    button.Text = "Unleash Greg™"
     button.TextSize = 18
     button.Parent = self.Frame
 
@@ -79,29 +86,11 @@ function NexusGui:AddButton()
     return button
 end
 
-function NexusGui:SetTitle(text)
-    self.Title.Text = text
-end
-
-function NexusGui:GetText()
-    if self.TextBox then
-        return self.TextBox.Text
-    end
-    return ""
-end
-
-function NexusGui:SetText(text)
-    if self.TextBox then
-        self.TextBox.Text = text
-    end
-end
-
--- ========== Greg AI Inject Logic ==========
+-- Greg AI + Chat Hook
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- Check if DefaultChatSystemChatEvents exists
 local chatEvents = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
 local ChatEvent = chatEvents and chatEvents:FindFirstChild("SayMessageRequest")
 
@@ -124,17 +113,16 @@ sendButton.MouseButton1Click:Connect(function()
 
     if success then
         local data = HttpService:JSONDecode(response)
-        local reply = data.reply or "Greg is asleep 😴"
+        local reply = data.reply or "Greg is dead inside."
 
         if ChatEvent then
             ChatEvent:FireServer("[Greg™]: " .. reply, "All")
         else
-            warn("SayMessageRequest not found. Greg can't speak.")
+            warn("[Greg™]: ChatEvent missing")
         end
     else
-        if ChatEvent then
-            ChatEvent:FireServer("[Greg™]: error contacting Greg's brain 💀", "All")
-        end
-        warn("Failed to reach Greg endpoint:", response)
+        warn("[Greg™]: HTTP error -", response)
     end
 end)
+
+-- Done. Inject this and you'll see the GUI mid-screen. Type and summon Greg into the server.
