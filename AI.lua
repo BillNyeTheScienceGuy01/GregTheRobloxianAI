@@ -1,16 +1,22 @@
--- Minimal Nexus GUI embed (only what we need)
+-- Minimal Nexus GUI embed (clean and fixed)
 local NexusGui = {}
 NexusGui.__index = NexusGui
 
-function NexusGui:CreateWindow()
+function NexusGui.new()
+    local guiParent = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
+    if not guiParent then
+        guiParent = game:GetService("CoreGui") -- fallback if PlayerGui doesn’t exist yet
+    end
+
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "NexusGUI"
     screenGui.ResetOnSpawn = false
-    screenGui.Parent = game:GetService("CoreGui")
+    screenGui.IgnoreGuiInset = true
+    screenGui.Parent = guiParent
 
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 300, 0, 100)
-    frame.Position = UDim2.new(0.5, -150, 0.5, -50)
+    frame.Size = UDim2.new(0, 300, 0, 120)
+    frame.Position = UDim2.new(0.5, -150, 0.5, -60)
     frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
@@ -37,7 +43,7 @@ function NexusGui:CreateWindow()
     return self
 end
 
-function NexusGui:AddTextBox(self)
+function NexusGui:AddTextBox()
     local input = Instance.new("TextBox")
     input.Size = UDim2.new(1, -20, 0, 30)
     input.Position = UDim2.new(0, 10, 0, 40)
@@ -46,6 +52,9 @@ function NexusGui:AddTextBox(self)
     input.TextColor3 = Color3.fromRGB(255,255,255)
     input.ClearTextOnFocus = false
     input.PlaceholderText = "Talk to Greg™"
+    input.Text = ""
+    input.Font = Enum.Font.SourceSans
+    input.TextSize = 18
     input.Parent = self.Frame
 
     table.insert(self.Components, input)
@@ -53,14 +62,16 @@ function NexusGui:AddTextBox(self)
     return input
 end
 
-function NexusGui:AddButton(self)
+function NexusGui:AddButton()
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(1, -20, 0, 30)
-    button.Position = UDim2.new(0, 10, 0, 75)
+    button.Position = UDim2.new(0, 10, 0, 80)
     button.BackgroundColor3 = Color3.fromRGB(0,120,255)
     button.BorderSizePixel = 0
     button.TextColor3 = Color3.fromRGB(255,255,255)
     button.Text = "Send"
+    button.Font = Enum.Font.SourceSansBold
+    button.TextSize = 18
     button.Parent = self.Frame
 
     table.insert(self.Components, button)
@@ -68,40 +79,42 @@ function NexusGui:AddButton(self)
     return button
 end
 
-function NexusGui:SetTitle(self, text)
+function NexusGui:SetTitle(text)
     self.Title.Text = text
 end
 
-function NexusGui:GetText(self)
+function NexusGui:GetText()
     if self.TextBox then
         return self.TextBox.Text
     end
     return ""
 end
 
-function NexusGui:SetText(self, text)
+function NexusGui:SetText(text)
     if self.TextBox then
         self.TextBox.Text = text
     end
 end
 
--- Now the Greg AI injector logic
-
+-- ========== Greg AI Inject Logic ==========
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local ChatEvent = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("SayMessageRequest")
+
+-- Check if DefaultChatSystemChatEvents exists
+local chatEvents = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
+local ChatEvent = chatEvents and chatEvents:FindFirstChild("SayMessageRequest")
 
 local GREG_ENDPOINT = "https://8e4ea171f3e4.ngrok-free.app/respond"
 
-local window = NexusGui:CreateWindow()
-local input = NexusGui:AddTextBox(window)
-local sendButton = NexusGui:AddButton(window)
+local gui = NexusGui.new()
+local inputBox = gui:AddTextBox()
+local sendButton = gui:AddButton()
 
 sendButton.MouseButton1Click:Connect(function()
-    local msg = input.Text
+    local msg = inputBox.Text
     if msg == "" then return end
-    input.Text = ""
+    inputBox.Text = ""
 
     local success, response = pcall(function()
         return HttpService:PostAsync(GREG_ENDPOINT, HttpService:JSONEncode({
@@ -112,8 +125,16 @@ sendButton.MouseButton1Click:Connect(function()
     if success then
         local data = HttpService:JSONDecode(response)
         local reply = data.reply or "Greg is asleep 😴"
-        ChatEvent:FireServer("[Greg™]: " .. reply, "All")
+
+        if ChatEvent then
+            ChatEvent:FireServer("[Greg™]: " .. reply, "All")
+        else
+            warn("SayMessageRequest not found. Greg can't speak.")
+        end
     else
-        ChatEvent:FireServer("[Greg™]: error contacting Greg's brain 💀", "All")
+        if ChatEvent then
+            ChatEvent:FireServer("[Greg™]: error contacting Greg's brain 💀", "All")
+        end
+        warn("Failed to reach Greg endpoint:", response)
     end
 end)
