@@ -1,12 +1,12 @@
--- Greg AI Chat Injector KRNL Edition
+-- Greg AI Chat + Chat Bubble Injector KRNL Edition
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
-
-local player = Players.LocalPlayer
 local CoreGui = game:GetService("CoreGui")
 
--- Make sure this RemoteEvent exists or create it (KRNL can do this)
+local player = Players.LocalPlayer
+
+-- Ensure GregChatEvent RemoteEvent exists (server chat hook)
 local GregChatEvent = ReplicatedStorage:FindFirstChild("GregChatEvent")
 if not GregChatEvent then
     GregChatEvent = Instance.new("RemoteEvent")
@@ -14,9 +14,58 @@ if not GregChatEvent then
     GregChatEvent.Parent = ReplicatedStorage
 end
 
+-- Ensure GregChatBubble RemoteEvent exists (client bubble chat)
+local GregChatBubble = ReplicatedStorage:FindFirstChild("GregChatBubble")
+if not GregChatBubble then
+    GregChatBubble = Instance.new("RemoteEvent")
+    GregChatBubble.Name = "GregChatBubble"
+    GregChatBubble.Parent = ReplicatedStorage
+end
+
+-- Client-side bubble display handler
+GregChatBubble.OnClientEvent:Connect(function(fromPlayer, msg)
+    local char = fromPlayer.Character
+    if not char then return end
+
+    local head = char:FindFirstChild("Head")
+    if not head then return end
+
+    -- Remove old bubble if present
+    local oldBubble = head:FindFirstChild("GregBubble")
+    if oldBubble then oldBubble:Destroy() end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "GregBubble"
+    billboard.Size = UDim2.new(5, 0, 2, 0)
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    billboard.Adornee = head
+    billboard.AlwaysOnTop = true
+    billboard.Parent = head
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.TextScaled = true
+    textLabel.TextWrapped = true
+    textLabel.Text = msg
+    textLabel.TextColor3 = Color3.new(1, 0, 0)
+    textLabel.Font = Enum.Font.Arcade
+    textLabel.Parent = billboard
+
+    task.delay(5, function()
+        if billboard and billboard.Parent then
+            billboard:Destroy()
+        end
+    end)
+end)
+
+-- Get HTTP exploit function
 local function getHttpRequest()
     return http_request or request or (syn and syn.request) or (fluxus and fluxus.request)
 end
+
+local httpRequest = getHttpRequest()
+local GREG_ENDPOINT = "https://fd8277848be7.ngrok-free.app/respond"
 
 -- GUI setup
 local screenGui = Instance.new("ScreenGui")
@@ -81,9 +130,6 @@ sendButton.Text = "Unleash Greg™"
 sendButton.TextSize = 18
 sendButton.Parent = frame
 
-local GREG_ENDPOINT = "https://fd8277848be7.ngrok-free.app/respond"
-local httpRequest = getHttpRequest()
-
 sendButton.MouseButton1Click:Connect(function()
     local msg = inputBox.Text
     if msg == "" then return end
@@ -111,7 +157,10 @@ sendButton.MouseButton1Click:Connect(function()
         local data = HttpService:JSONDecode(response.Body)
         local reply = data.reply or "Greg blacked out mid-thought."
 
+        -- Fire server chat event for official chat system
         GregChatEvent:FireServer("[Greg™]: " .. reply)
+        -- Fire bubble event for everyone to see
+        GregChatBubble:FireAllClients(player, "[Greg™]: " .. reply)
     else
         warn("[Greg™]: HTTP request failed.", response)
     end
