@@ -1,8 +1,8 @@
 --[[
   Greg AI Chat Injector GUI (CoolGUI_X Edition)
-  Frameworks: NexusGui, RemoteEvent legit creation (client-side)
-  Author: Isaac (a.k.a OTC Greg Summoner)
-  Version: KRNL Client Exploit Edition (with RemoteEvent)
+  Frameworks: NexusGui, RemoteEvent hooking for custom chat
+  Author: Isaac (OTC Greg Summoner)
+  Version: KRNL Client Exploit Edition
 ]]
 
 -- Nexus GUI Framework
@@ -102,24 +102,12 @@ function NexusGui:AddButton()
     return button
 end
 
--- Main Greg AI + Chat Hook (KRNL client-side HTTP + RemoteEvent creation)
+-- Greg AI + Chat Hook (KRNL client-side HTTP)
 local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- Legit RemoteEvent creation client-side only
-local remoteName = "GregChatEvent"
-local GregChatEvent = ReplicatedStorage:FindFirstChild(remoteName)
-if not GregChatEvent then
-    GregChatEvent = Instance.new("RemoteEvent")
-    GregChatEvent.Name = remoteName
-    GregChatEvent.Parent = ReplicatedStorage
-end
-
--- Roblox default chat event for chat injection
-local chatEvents = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-local ChatEvent = chatEvents and chatEvents:FindFirstChild("SayMessageRequest")
+local GregChatEvent = game:GetService("ReplicatedStorage"):WaitForChild("GregChatEvent")
 
 local GREG_ENDPOINT = "https://8e4ea171f3e4.ngrok-free.app/respond"
 
@@ -131,9 +119,6 @@ sendButton.MouseButton1Click:Connect(function()
     local msg = inputBox.Text
     if msg == "" then return end
     inputBox.Text = ""
-
-    -- Fire your own RemoteEvent client-side (doesn't communicate server, but useful to avoid errors)
-    GregChatEvent:FireServer(msg)
 
     local exploitRequest = http_request or request or (syn and syn.request) or (fluxus and fluxus.request)
     if not exploitRequest then
@@ -158,11 +143,7 @@ sendButton.MouseButton1Click:Connect(function()
         local data = HttpService:JSONDecode(response.Body)
         local reply = data.reply or "Greg blacked out mid-thought."
 
-        if ChatEvent then
-            ChatEvent:FireServer("[Greg™]: " .. reply, "All")
-        else
-            warn("[Greg™]: ChatEvent missing")
-        end
+        GregChatEvent:FireServer("[Greg™]: " .. reply)
     else
         warn("[Greg™]: HTTP request failed", response)
     end
