@@ -1,8 +1,9 @@
 --[[
   Greg AI Chat Injector GUI (CoolGUI_X Edition)
-  Frameworks: NexusGui, DrawingAPI fallback, RemoteEvent scanner
+  Frameworks: NexusGui, DrawingAPI fallback, RemoteEvent spoof
   Author: Isaac (a.k.a OTC Greg Summoner)
-  Version: Phase 2 BETA
+  Version: KRNL Client Exploit Edition
+  Note: This version fakes a RemoteFunction bridge client-side for KRNL.
 ]]--
 
 -- Nexus GUI Framework
@@ -86,7 +87,7 @@ function NexusGui:AddButton()
     return button
 end
 
--- Greg AI + Chat Hook
+-- Greg AI + Chat Hook (KRNL client-side HTTP)
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -106,14 +107,21 @@ sendButton.MouseButton1Click:Connect(function()
     inputBox.Text = ""
 
     local success, response = pcall(function()
-        return HttpService:PostAsync(GREG_ENDPOINT, HttpService:JSONEncode({
-            prompt = player.Name .. ": " .. msg
-        }), Enum.HttpContentType.ApplicationJson)
+        return syn and syn.request and syn.request({
+            Url = GREG_ENDPOINT,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = HttpService:JSONEncode({
+                prompt = player.Name .. ": " .. msg
+            })
+        }) or error("syn.request not available")
     end)
 
-    if success then
-        local data = HttpService:JSONDecode(response)
-        local reply = data.reply or "Greg is dead inside."
+    if success and response and response.Body then
+        local data = HttpService:JSONDecode(response.Body)
+        local reply = data.reply or "Greg blacked out mid-thought."
 
         if ChatEvent then
             ChatEvent:FireServer("[Greg™]: " .. reply, "All")
@@ -121,8 +129,6 @@ sendButton.MouseButton1Click:Connect(function()
             warn("[Greg™]: ChatEvent missing")
         end
     else
-        warn("[Greg™]: HTTP error -", response)
+        warn("[Greg™]: HTTP request failed", response)
     end
 end)
-
--- Done. Inject this and you'll see the GUI mid-screen. Type and summon Greg into the server.
